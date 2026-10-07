@@ -10,16 +10,16 @@
   content="width=device-width, initial-scale=1.0"
 >
 
-<title>Frequência - Foto</title>
+<title>Frequência - Câmera</title>
 
 <style>
 
 body {
   font-family: Arial, sans-serif;
-  text-align: center;
   background: #f2f4f7;
-  padding: 20px;
   margin: 0;
+  padding: 20px;
+  text-align: center;
 }
 
 .caixa {
@@ -61,7 +61,6 @@ button {
 
 button:disabled {
   background: #999;
-  cursor: not-allowed;
 }
 
 #mensagem {
@@ -70,10 +69,8 @@ button:disabled {
   line-height: 1.5;
 }
 
-#enviando {
+canvas {
   display: none;
-  margin-top: 20px;
-  font-weight: bold;
 }
 
 </style>
@@ -100,66 +97,67 @@ A foto deve ser tirada agora pela câmera.
   id="botao"
   disabled
 >
-AGUARDE A CÂMERA...
+ABRINDO CÂMERA...
 </button>
 
 <div id="mensagem">
 Abrindo câmera...
 </div>
 
-<div id="enviando">
-Enviando frequência...
-</div>
-
-<canvas
-  id="canvas"
-  style="display:none;"
-></canvas>
+<canvas id="canvas"></canvas>
 
 </div>
 
 
 <script>
 
+
+/* ============================================
+   CONFIGURAÇÃO
+   ============================================ */
+
 const APP_SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbzuGKlUdm__TWhxcutco2o8vDoF95zt-D-kmNS739ioizCaNYcrr8lZZqeIFj7kFFlb/exec";
+"https://script.google.com/macros/s/AKfycbzuGKlUdm__TWhxcutco2o8vDoF95zt-D-kmNS739ioizCaNYcrr8lZZqeIFj7kFFlb/exec";
 
 
 const video =
-  document.getElementById("video");
+document.getElementById("video");
+
 
 const botao =
-  document.getElementById("botao");
+document.getElementById("botao");
+
 
 const mensagem =
-  document.getElementById("mensagem");
+document.getElementById("mensagem");
 
-const enviando =
-  document.getElementById("enviando");
 
 const canvas =
-  document.getElementById("canvas");
+document.getElementById("canvas");
+
+
+let stream = null;
 
 
 /* ============================================
-   VERIFICAR TOKEN
+   TOKEN
    ============================================ */
 
 const parametros =
-  new URLSearchParams(
-    window.location.search
-  );
+new URLSearchParams(
+window.location.search
+);
 
 
 const token =
-  parametros.get("token");
+parametros.get("token");
 
 
 if (!token) {
 
   mensagem.innerHTML =
-    "<b>Erro:</b><br>" +
-    "Sessão da frequência não encontrada.";
+  "<b>Erro:</b><br>" +
+  "Sessão da frequência não encontrada.";
 
 }
 
@@ -172,54 +170,70 @@ async function abrirCamera() {
 
   try {
 
-    if (
-      !navigator.mediaDevices ||
-      !navigator.mediaDevices.getUserMedia
-    ) {
+    stream =
+    await navigator.mediaDevices.getUserMedia({
 
-      throw new Error(
-        "Este navegador não permite acesso à câmera."
-      );
+      video: {
+        facingMode: "user"
+      },
 
-    }
+      audio: false
 
-
-    const stream =
-      await navigator.mediaDevices.getUserMedia({
-
-        video: {
-          facingMode: "user"
-        },
-
-        audio: false
-
-      });
+    });
 
 
     video.srcObject =
-      stream;
+    stream;
 
 
     botao.disabled =
-      false;
+    false;
 
 
     botao.textContent =
-      "TIRAR FOTO";
+    "TIRAR FOTO";
 
 
     mensagem.textContent =
-      "Câmera pronta. Tire sua foto.";
+    "Câmera pronta. Tire sua foto.";
 
   }
 
   catch (erro) {
 
     mensagem.innerHTML =
-      "<b>Não foi possível abrir a câmera.</b><br>" +
-      erro.message;
+    "<b>Erro ao abrir a câmera:</b><br>" +
+    erro.message;
 
   }
+
+}
+
+
+/* ============================================
+   PARAR CÂMERA
+   ============================================ */
+
+function pararCamera() {
+
+  if (!stream) {
+    return;
+  }
+
+
+  stream
+    .getTracks()
+    .forEach(
+      function(track) {
+
+        track.stop();
+
+      }
+    );
+
+
+  video.srcObject =
+  null;
 
 }
 
@@ -229,119 +243,139 @@ async function abrirCamera() {
    ============================================ */
 
 botao.onclick =
-  function() {
+function() {
 
-    if (!token) {
-
-      mensagem.textContent =
-        "Sessão inválida.";
-
-      return;
-
-    }
-
-
-    botao.disabled =
-      true;
-
+  if (!token) {
 
     mensagem.textContent =
-      "Capturando foto...";
+    "Sessão inválida.";
+
+    return;
+
+  }
 
 
-    const larguraOriginal =
-      video.videoWidth;
-
-    const alturaOriginal =
-      video.videoHeight;
+  botao.disabled =
+  true;
 
 
-    if (
-      !larguraOriginal ||
-      !alturaOriginal
-    ) {
-
-      mensagem.textContent =
-        "A câmera ainda não está pronta.";
-
-      botao.disabled =
-        false;
-
-      return;
-
-    }
+  botao.textContent =
+  "PROCESSANDO...";
 
 
-    /* ----------------------------------------
-       REDUZ O TAMANHO DA FOTO
-       ---------------------------------------- */
-
-    const larguraMaxima =
-      800;
+  mensagem.textContent =
+  "Capturando foto...";
 
 
-    let largura =
-      larguraOriginal;
-
-    let altura =
-      alturaOriginal;
+  const larguraOriginal =
+  video.videoWidth;
 
 
-    if (
-      largura > larguraMaxima
-    ) {
-
-      altura =
-        Math.round(
-          altura *
-          larguraMaxima /
-          largura
-        );
-
-      largura =
-        larguraMaxima;
-
-    }
+  const alturaOriginal =
+  video.videoHeight;
 
 
-    canvas.width =
-      largura;
+  if (
+    !larguraOriginal ||
+    !alturaOriginal
+  ) {
 
-    canvas.height =
-      altura;
+    mensagem.textContent =
+    "A câmera ainda não está pronta.";
+
+    botao.disabled =
+    false;
+
+    botao.textContent =
+    "TIRAR FOTO";
+
+    return;
+
+  }
 
 
-    const contexto =
-      canvas.getContext("2d");
+  const larguraMaxima =
+  800;
 
 
-    contexto.drawImage(
-      video,
-      0,
-      0,
-      largura,
-      altura
+  let largura =
+  larguraOriginal;
+
+
+  let altura =
+  alturaOriginal;
+
+
+  if (
+    largura > larguraMaxima
+  ) {
+
+    altura =
+    Math.round(
+      altura *
+      larguraMaxima /
+      largura
     );
 
 
-    const foto =
-      canvas.toDataURL(
-        "image/jpeg",
-        0.70
-      );
+    largura =
+    larguraMaxima;
+
+  }
 
 
-    mensagem.textContent =
-      "Foto capturada.";
+  canvas.width =
+  largura;
 
 
-    enviando.style.display =
-      "block";
+  canvas.height =
+  altura;
 
 
-    enviarFoto(foto);
+  const contexto =
+  canvas.getContext("2d");
 
-  };
+
+  contexto.drawImage(
+
+    video,
+
+    0,
+
+    0,
+
+    largura,
+
+    altura
+
+  );
+
+
+  const foto =
+  canvas.toDataURL(
+    "image/jpeg",
+    0.70
+  );
+
+
+  /* ----------------------------------------
+     PARAR CÂMERA
+     ---------------------------------------- */
+
+  pararCamera();
+
+
+  mensagem.textContent =
+  "Foto capturada. ENVIANDO...";
+
+
+  botao.textContent =
+  "ENVIANDO...";
+
+
+  enviarFoto(foto);
+
+};
 
 
 /* ============================================
@@ -350,38 +384,42 @@ botao.onclick =
 
 function enviarFoto(foto) {
 
+  mensagem.textContent =
+  "ENVIANDO FREQUÊNCIA...";
+
+
   const formulario =
-    document.createElement("form");
+  document.createElement("form");
 
 
   formulario.method =
-    "POST";
+  "POST";
 
 
   formulario.action =
-    APP_SCRIPT_URL;
+  APP_SCRIPT_URL;
 
 
   formulario.target =
-    "_self";
+  "_self";
 
 
-  /* ----------------------------------------
-     TOKEN
-     ---------------------------------------- */
+  /* TOKEN */
 
   const campoToken =
-    document.createElement("input");
+  document.createElement("input");
 
 
   campoToken.type =
-    "hidden";
+  "hidden";
+
 
   campoToken.name =
-    "token";
+  "token";
+
 
   campoToken.value =
-    token;
+  token;
 
 
   formulario.appendChild(
@@ -389,22 +427,22 @@ function enviarFoto(foto) {
   );
 
 
-  /* ----------------------------------------
-     FOTO
-     ---------------------------------------- */
+  /* FOTO */
 
   const campoFoto =
-    document.createElement("input");
+  document.createElement("input");
 
 
   campoFoto.type =
-    "hidden";
+  "hidden";
+
 
   campoFoto.name =
-    "foto";
+  "foto";
+
 
   campoFoto.value =
-    foto;
+  foto;
 
 
   formulario.appendChild(
@@ -418,7 +456,7 @@ function enviarFoto(foto) {
 
 
   mensagem.textContent =
-    "Enviando frequência...";
+  "ENVIANDO FREQUÊNCIA...";
 
 
   formulario.submit();
