@@ -1,0 +1,114 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Foto - Frequência</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f4f7;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .caixa {
+      max-width: 500px;
+      margin: 20px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.10);
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    video {
+      width: 100%;
+      max-width: 450px;
+      border-radius: 12px;
+      background: black;
+      display: block;
+      margin: 20px auto 0;
+    }
+
+    canvas {
+      display: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      margin-top: 20px;
+      border: none;
+      border-radius: 8px;
+      background: #1976d2;
+      color: white;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #999;
+    }
+
+    #mensagem {
+      margin-top: 15px;
+      font-weight: bold;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="caixa">
+
+  <h1>Tire sua foto</h1>
+
+  <p>
+    A foto deve ser tirada agora pela câmera.
+  </p>
+
+  <video
+    id="video"
+    autoplay
+    playsinline
+    muted>
+  </video>
+
+  <canvas id="canvas"></canvas>
+
+  <button
+    id="tirarFoto"
+    onclick="tirarFoto()"
+    disabled>
+    AGUARDE A CÂMERA...
+  </button>
+
+  <div id="mensagem">
+    Abrindo câmera...
+  </div>
+
+</div>
+
+
+<script>
+
+let stream = null;
+let cameraPronta = false;
+
+
+/* ============================================
+   ABRIR CÂMERA
+   ============================================ */
+
+window.onload = abrirCam
+```
