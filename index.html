@@ -1,13 +1,20 @@
 ```html
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>Foto - Frequência</title>
 
   <style>
+
     body {
       font-family: Arial, sans-serif;
       background: #f2f4f7;
@@ -29,11 +36,15 @@
       margin-bottom: 10px;
     }
 
+    p {
+      color: #555;
+    }
+
     video {
       width: 100%;
       max-width: 450px;
       border-radius: 12px;
-      background: black;
+      background: #000;
       display: block;
       margin: 20px auto 0;
     }
@@ -57,6 +68,7 @@
 
     button:disabled {
       background: #999;
+      cursor: not-allowed;
     }
 
     #mensagem {
@@ -64,51 +76,254 @@
       font-weight: bold;
       line-height: 1.5;
     }
+
   </style>
+
 </head>
+
 
 <body>
 
-<div class="caixa">
+  <div class="caixa">
 
-  <h1>Tire sua foto</h1>
+    <h1>Tire sua foto</h1>
 
-  <p>
-    A foto deve ser tirada agora pela câmera.
-  </p>
+    <p>
+      A foto deve ser tirada agora pela câmera.
+    </p>
 
-  <video
-    id="video"
-    autoplay
-    playsinline
-    muted>
-  </video>
+    <video
+      id="video"
+      autoplay
+      playsinline
+      muted>
+    </video>
 
-  <canvas id="canvas"></canvas>
+    <canvas id="canvas"></canvas>
 
-  <button
-    id="tirarFoto"
-    onclick="tirarFoto()"
-    disabled>
-    AGUARDE A CÂMERA...
-  </button>
+    <button
+      id="tirarFoto"
+      disabled>
+      AGUARDE A CÂMERA...
+    </button>
 
-  <div id="mensagem">
-    Abrindo câmera...
+    <div id="mensagem">
+      Abrindo câmera...
+    </div>
+
   </div>
 
-</div>
+
+  <script>
+
+    let stream = null;
+
+    let cameraPronta = false;
 
 
-<script>
+    /* =========================================
+       ABRIR CÂMERA
+       ========================================= */
 
-let stream = null;
-let cameraPronta = false;
+    window.addEventListener(
+      "load",
+      abrirCamera
+    );
 
 
-/* ============================================
-   ABRIR CÂMERA
-   ============================================ */
+    async function abrirCamera() {
 
-window.onload = abrirCam
+      const video =
+        document.getElementById("video");
+
+      const botao =
+        document.getElementById("tirarFoto");
+
+      const mensagem =
+        document.getElementById("mensagem");
+
+
+      if (
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+      ) {
+
+        mensagem.innerHTML =
+          "<b>Seu navegador não permite acesso à câmera.</b>";
+
+        return;
+
+      }
+
+
+      try {
+
+        mensagem.textContent =
+          "Solicitando acesso à câmera...";
+
+
+        stream =
+          await navigator.mediaDevices.getUserMedia({
+
+            video: {
+              facingMode: "user"
+            },
+
+            audio: false
+
+          });
+
+
+        video.srcObject =
+          stream;
+
+
+        video.onloadedmetadata =
+          function() {
+
+            video.play();
+
+            cameraPronta = true;
+
+            botao.disabled = false;
+
+            botao.textContent =
+              "TIRAR FOTO";
+
+            mensagem.textContent =
+              "Câmera pronta. Tire sua foto.";
+
+          };
+
+
+      }
+
+      catch (erro) {
+
+        console.error(erro);
+
+        mensagem.innerHTML =
+          "<b>Não foi possível abrir a câmera.</b><br><br>" +
+          "Permita o acesso à câmera no navegador e tente novamente.";
+
+      }
+
+    }
+
+
+    /* =========================================
+       TIRAR FOTO
+       ========================================= */
+
+    function tirarFoto() {
+
+      const video =
+        document.getElementById("video");
+
+      const canvas =
+        document.getElementById("canvas");
+
+      const botao =
+        document.getElementById("tirarFoto");
+
+      const mensagem =
+        document.getElementById("mensagem");
+
+
+      if (!cameraPronta) {
+
+        mensagem.textContent =
+          "Aguarde a câmera ficar pronta.";
+
+        return;
+
+      }
+
+
+      if (
+        !video.videoWidth ||
+        !video.videoHeight
+      ) {
+
+        mensagem.textContent =
+          "A câmera ainda está carregando.";
+
+        return;
+
+      }
+
+
+      botao.disabled = true;
+
+      mensagem.textContent =
+        "Tirando foto...";
+
+
+      canvas.width =
+        video.videoWidth;
+
+      canvas.height =
+        video.videoHeight;
+
+
+      const contexto =
+        canvas.getContext("2d");
+
+
+      contexto.drawImage(
+        video,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+
+      const foto =
+        canvas.toDataURL(
+          "image/jpeg",
+          0.85
+        );
+
+
+      /*
+
+        Por enquanto estamos apenas
+        testando a câmera.
+
+      */
+
+
+      if (stream) {
+
+        stream
+          .getTracks()
+          .forEach(function(track) {
+
+            track.stop();
+
+          });
+
+      }
+
+
+      mensagem.innerHTML =
+        "<b>Foto tirada com sucesso!</b><br><br>" +
+        "A câmera está funcionando corretamente.";
+
+      console.log(
+        "Foto capturada:",
+        foto.substring(0, 50)
+      );
+
+    }
+
+
+    /* =========================================
+       BOTÃO
+       ========================================= */
+
+    document
+      .getElementById("tirarFoto")
+      .addEventListener(
 ```
